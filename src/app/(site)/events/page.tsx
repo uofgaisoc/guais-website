@@ -22,22 +22,26 @@ import { InView } from '@/components/ui/in-view' // Import the InView component
 // import { PlusIcon } from 'lucide-react' // Removed as PlusIcon button is removed
 
 // Define an interface for the Event data
-interface PastEvent {
+interface EventListItem {
   _id: string;
   title?: string;
   slug?: { current?: string };
+  status?: 'upcoming' | 'past';
+  ticketLink?: string;
   homepageBanner?: SanityImageSource;
   eventPageImages?: SanityImageSource[];
   homepageShortDescription?: TypedObject[]; // Now Portable Text
   eventDate?: string;
 }
 
-// Function to fetch past events
-async function getPastEvents(): Promise<PastEvent[]> {
-  const query = groq`*[_type == "event" && status == "past"] | order(eventDate desc){
+// Function to fetch all events: upcoming first (soonest first), then past (most recent first)
+async function getEvents(): Promise<EventListItem[]> {
+  const query = groq`*[_type == "event"]{
     _id,
     title,
     slug,
+    status,
+    ticketLink,
     homepageBanner,
     eventPageImages, // Fetching in case homepageBanner is not set for past events
     homepageShortDescription,
@@ -45,16 +49,22 @@ async function getPastEvents(): Promise<PastEvent[]> {
   }`
   try {
     // Add the next-sanity config object with the tag here
-    const events = await client.fetch<PastEvent[]>(query, {}, { next: { tags: ['event'] } })
-    return events || []
+    const events = await client.fetch<EventListItem[]>(query, {}, { next: { tags: ['event'] } })
+    const upcoming = (events || [])
+      .filter((e) => e.status === 'upcoming')
+      .sort((a, b) => (a.eventDate || '').localeCompare(b.eventDate || ''))
+    const past = (events || [])
+      .filter((e) => e.status !== 'upcoming')
+      .sort((a, b) => (b.eventDate || '').localeCompare(a.eventDate || ''))
+    return [...upcoming, ...past]
   } catch (error) {
-    console.error("Failed to fetch past events:", error)
+    console.error("Failed to fetch events:", error)
     return []
   }
 }
 
 export default async function EventsPage() {
-  const pastEvents = await getPastEvents()
+  const events = await getEvents()
 
   const cardVariants = {
     hidden: { opacity: 0, y: 100, filter: 'blur(4px)' },
@@ -74,13 +84,14 @@ export default async function EventsPage() {
 
   return (
     <main className="container mx-auto px-4 py-12">
-      <h1 className="text-4xl font-bold mb-10 text-center">Past Events</h1>
+      <h1 className="text-4xl font-bold mb-10 text-center">Events</h1>
       
-      {pastEvents.length > 0 ? (
+      {events.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {pastEvents.map((event) => {
+          {events.map((event) => {
             // Determine which image to use: homepageBanner or first of eventPageImages
             const displayImage = event.homepageBanner || (event.eventPageImages && event.eventPageImages[0]);
+            const isUpcoming = event.status === 'upcoming';
 
             return (
               <InView
@@ -100,8 +111,13 @@ export default async function EventsPage() {
               >
                 <MorphingDialogTrigger
                   style={{ borderRadius: '12px' }}
-                  className='flex w-full flex-col overflow-hidden border text-left shadow-md hover:shadow-xl transition-shadow bg-card text-card-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
+                  className={`relative flex w-full flex-col overflow-hidden border text-left ${isUpcoming ? 'border-green-500 border-2' : ''} shadow-md hover:shadow-xl transition-shadow bg-card text-card-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
                 >
+                  {isUpcoming && (
+                    <span className='absolute top-3 left-3 z-10 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-semibold text-white shadow'>
+                      Upcoming
+                    </span>
+                  )}
                   {displayImage && (
                     <MorphingDialogImage
                       src={urlFor(displayImage).width(400).height(300).auto('format').url()}
@@ -128,7 +144,7 @@ export default async function EventsPage() {
                 <MorphingDialogContainer> {/* Handles the backdrop and centering */}
                   <MorphingDialogContent
                     style={{ borderRadius: '24px' }} // Style for the expanded content
-                    className='w-full max-w-lg overflow-hidden border shadow-xl bg-card text-card-foreground' // Theme-aware classes
+                    className={`w-full max-w-lg overflow-hidden border shadow-xl bg-card text-card-foreground ${isUpcoming ? 'border-green-500 border-2' : ''}`} // Theme-aware classes
                   >
                     {displayImage && (
                        <div className="relative w-full aspect-[16/9] sm:aspect-video"> {/* Image in the expanded dialog */}
@@ -140,6 +156,11 @@ export default async function EventsPage() {
                        </div>
                     )}
                     <div className='p-6'>
+                      {isUpcoming && (
+                        <span className='inline-block mb-2 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-semibold text-white'>
+                          Upcoming
+                        </span>
+                      )}
                       {event.title && (
                         <MorphingDialogTitle className='text-2xl font-bold mb-1'>
                           {event.title}
@@ -155,12 +176,23 @@ export default async function EventsPage() {
                           <PortableText value={event.homepageShortDescription} />
                         </MorphingDialogDescription>
                       )}
-                      {event.slug?.current && (
-                        <Button asChild className="mt-6">
-                          <Link href={`/events/${event.slug.current}`}>
-                            Read More
-                          </Link>
-                        </Button>
+                      {isUpcoming ? (
+                        // Upcoming events have no long description yet, so link to tickets instead
+                        event.ticketLink && (
+                          <Button asChild className="mt-6">
+                            <a href={event.ticketLink} target="_blank" rel="noopener noreferrer">
+                              Get Tickets
+                            </a>
+                          </Button>
+                        )
+                      ) : (
+                        event.slug?.current && (
+                          <Button asChild className="mt-6">
+                            <Link href={`/events/${event.slug.current}`}>
+                              Read More
+                            </Link>
+                          </Button>
+                        )
                       )}
                     </div>
                   <MorphingDialogClose className="text-muted-foreground hover:text-foreground" />
@@ -173,7 +205,7 @@ export default async function EventsPage() {
         </div>
       ) : (
         <div className="text-center py-10">
-          <p className="text-xl text-muted-foreground">No past events found.</p>
+          <p className="text-xl text-muted-foreground">No events found.</p>
         </div>
       )}
     </main>
