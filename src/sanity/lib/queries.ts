@@ -49,23 +49,32 @@ export interface SiteSettings {
   socials: SocialLink[]
 }
 
+// Bundled icons for the platforms offered in the Studio dropdown.
+// "Other" has no bundled icon; the editor uploads one.
+const PLATFORMS: Record<string, { label: string; iconSrc: string }> = {
+  linkedin: { label: 'LinkedIn', iconSrc: '/icons/linkedin.webp' },
+  instagram: { label: 'Instagram', iconSrc: '/icons/instagram.webp' },
+  discord: { label: 'Discord', iconSrc: '/icons/discord.png' },
+  src: { label: 'SRC Membership', iconSrc: '/icons/SRC.png' },
+}
+
 // Used until someone fills in Site Settings in the Studio, so a fresh
 // deploy still has working buttons.
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   membershipLink: 'https://www.glasgowunisrc.org/organisation/events/',
   contactEmails: ['artificial.intelligence@src.gla.ac.uk', 'aisoc.gu@gmail.com'],
   socials: [
-    { label: 'LinkedIn', iconSrc: '/icons/linkedin.webp', url: 'https://www.linkedin.com/company/glasgow-university-artificial-intelligence-society/' },
-    { label: 'Instagram', iconSrc: '/icons/instagram.webp', url: 'https://www.instagram.com/guaisoc' },
-    { label: 'Discord', iconSrc: '/icons/discord.png', url: 'https://discord.gg/SChyX4WBbK' },
-    { label: 'SRC Membership', iconSrc: '/icons/SRC.png', url: 'https://www.glasgowunisrc.org/organisation/events/' },
+    { ...PLATFORMS.linkedin, url: 'https://www.linkedin.com/company/glasgow-university-artificial-intelligence-society/' },
+    { ...PLATFORMS.instagram, url: 'https://www.instagram.com/guaisoc' },
+    { ...PLATFORMS.discord, url: 'https://discord.gg/SChyX4WBbK' },
+    { ...PLATFORMS.src, url: 'https://www.glasgowunisrc.org/organisation/events/' },
   ],
 }
 
 interface RawSiteSettings {
   membershipLink?: string
   contactEmails?: string[]
-  socials?: Array<{ label?: string; url?: string; icon?: SanityImageSource }>
+  socials?: Array<{ platform?: string; label?: string; url?: string; icon?: SanityImageSource }>
 }
 
 export async function getSiteSettings(): Promise<SiteSettings> {
@@ -80,13 +89,18 @@ export async function getSiteSettings(): Promise<SiteSettings> {
     )
     if (!raw) return DEFAULT_SITE_SETTINGS
 
-    const socials = (raw.socials ?? [])
-      .filter((s): s is { label: string; url: string; icon?: SanityImageSource } => !!s.label && !!s.url)
-      .map((s) => ({
-        label: s.label,
-        url: s.url,
-        iconSrc: s.icon ? urlFor(s.icon).width(96).height(96).fit('max').auto('format').url() : undefined,
-      }))
+    const socials: SocialLink[] = (raw.socials ?? [])
+      .filter((s) => !!s.url)
+      .map((s) => {
+        const platform = s.platform ? PLATFORMS[s.platform] : undefined
+        return {
+          label: s.label || platform?.label || 'Link',
+          url: s.url as string,
+          iconSrc: s.icon
+            ? urlFor(s.icon).width(96).height(96).fit('max').auto('format').url()
+            : platform?.iconSrc,
+        }
+      })
 
     return {
       membershipLink: raw.membershipLink || DEFAULT_SITE_SETTINGS.membershipLink,
