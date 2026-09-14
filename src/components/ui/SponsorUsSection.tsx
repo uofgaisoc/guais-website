@@ -13,6 +13,7 @@ export function SponsorUsSection({ contactEmails }: { contactEmails: string[] })
       <InView
         as="section"
         variants={sectionVariants}
+        viewOptions={{ once: true, amount: 0.1 }}
         className="py-12 sm:py-16" // Consistent padding
       >
       <TextEffect
@@ -58,15 +59,16 @@ export function SponsorUsSection({ contactEmails }: { contactEmails: string[] })
             <InView
               key={index}
               as="li"
-              // Apply variants directly if they are simple, or define more complex ones if needed
               variants={{
                 hidden: { opacity: 0, y: 20, scale: 0.95 },
                 visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.4, delay: 0.1 * index, ease: "easeOut" } },
               }}
-              className="p-6 bg-card rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-out flex flex-col" // Added flex-col for better structure if content varies
+              viewOptions={{ once: true, amount: 0.3 }}
+              className="p-6 bg-card rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 ease-out flex flex-col"
             >
-              <TextEffect as="h4" preset="blur" className="text-xl font-semibold mb-2 text-card-foreground">{item.title}</TextEffect>
-              <TextEffect as="p" preset="blur" per="line" className="text-sm text-card-foreground/80 flex-grow">{item.description}</TextEffect> {/* Added flex-grow if items are in a flex container and need to align */}
+              {/* Plain text here: the card itself animates, so animating the text too made it flicker */}
+              <h4 className="text-xl font-semibold mb-2 text-card-foreground">{item.title}</h4>
+              <p className="text-sm text-card-foreground/80 flex-grow">{item.description}</p>
             </InView>
           ))}
         </ul>

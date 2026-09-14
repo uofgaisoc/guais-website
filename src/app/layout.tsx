@@ -3,9 +3,6 @@ import { Geist_Mono } from "next/font/google"; // Keep Geist_Mono for now as a s
 import localFont from "next/font/local"; // Import localFont
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ModeToggle } from "@/components/mode-toggle";
-import { Navbar } from "@/components/Navbar"; // Import Navbar
-import { Footer } from "@/components/Footer"; // Import Footer
 
 // Define the custom local font "Neue Metana Mono"
 const neueMetanaMono = localFont({
@@ -75,16 +72,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex flex-col min-h-screen"> {/* Main flex container */}
-            <div className="fixed top-4 right-4 z-[60]"> {/* Made ModeToggle fixed and increased z-index */}
-              <ModeToggle />
-            </div>
-            <Navbar /> {/* Navbar has z-50 */}
-            <div className="flex-grow pt-24"> {/* Content area that grows */}
-              {children}
-            </div>
-            <Footer /> {/* Add Footer component */}
-          </div>
+          {/* Navbar, footer and theme toggle live in src/app/(site)/layout.tsx
+              so the Sanity Studio at /studio gets a clean page */}
+          {children}
         </ThemeProvider>
       </body>
     </html>
