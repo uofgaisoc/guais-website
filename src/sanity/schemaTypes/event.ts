@@ -188,7 +188,7 @@ export default defineType({
     },
     prepare(selection) {
       const {title, date, media, status} = selection
-      const eventDate = date ? new Date(date).toLocaleDateString() : 'No date'
+      const eventDate = date ? new Date(date).toLocaleDateString('en-GB') : 'No date'
       return {
         title: title,
         subtitle: `${eventDate} - ${status?.toUpperCase() || 'NO STATUS'}`,

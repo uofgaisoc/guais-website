@@ -109,7 +109,7 @@ export default async function EventDetailPage({
         )}
         {event.eventDate && (
           <p className="text-lg text-muted-foreground mb-8 text-center">
-            {new Date(event.eventDate).toLocaleDateString('en-US', {
+            {new Date(event.eventDate).toLocaleDateString('en-GB', {
               year: 'numeric',
               month: 'long',
               day: 'numeric',

@@ -134,7 +134,7 @@ export default async function EventsPage() {
                     {/* Optional: display date on card if desired - keeping it for now */}
                     {event.eventDate && (
                       <p className='text-xs text-muted-foreground mb-2'>
-                        {new Date(event.eventDate).toLocaleDateString()}
+                        {new Date(event.eventDate).toLocaleDateString('en-GB')}
                       </p>
                     )}
                     {/* PlusIcon button removed, whole card is trigger */}
@@ -168,7 +168,7 @@ export default async function EventsPage() {
                       )}
                        {event.eventDate && ( // Display date in expanded view
                         <MorphingDialogSubtitle className='text-sm text-muted-foreground mb-3'>
-                          {new Date(event.eventDate).toLocaleDateString()}
+                          {new Date(event.eventDate).toLocaleDateString('en-GB')}
                         </MorphingDialogSubtitle>
                       )}
                       {event.homepageShortDescription && (
