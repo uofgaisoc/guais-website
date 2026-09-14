@@ -165,7 +165,7 @@ export default async function EventDetailPage({
          <div className="mt-12 text-center">
             <Button asChild variant="outline">
                 <Link href="/events">
-                    &larr; Back to All Past Events
+                    &larr; Back to All Events
                 </Link>
             </Button>
         </div>
